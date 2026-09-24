@@ -1,5 +1,5 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../db";
+import sequelize from "../db.js";
 
 const Appuntamento = sequelize.define('Appuntamento', {
     id: {
@@ -44,7 +44,7 @@ const Appuntamento = sequelize.define('Appuntamento', {
         {
             unique: true,
             fields: ['date', 'startTime'],
-            name: 'unique:appuntamento_slot'
+            name: 'unique_appuntamento_slot'
         }
     ]
 })
