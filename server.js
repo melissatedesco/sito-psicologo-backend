@@ -5,7 +5,7 @@ import sequelize from './db.js'
 import authRoutes from './routes/authRoutes.js'
 import appuntamentoRoutes from './routes/appuntamentoRoutes.js'
 
-dotenv.config()
+dotenv.config({ override: true, quiet: true })
 
 const app = express()
 const PORT = process.env.PORT || 5000
