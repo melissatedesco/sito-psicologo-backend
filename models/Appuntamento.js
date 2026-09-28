@@ -36,15 +36,23 @@ const Appuntamento = sequelize.define('Appuntamento', {
     },
     status: {
         type: DataTypes.ENUM('confermato', 'cancellato'),
+        allowNull: false,
         defaultValue: 'confermato'
     }
 }, {
-    tableName:'appuntamento',
+    manageToken: {
+        type: DataTypes.UUID, // UUID: Universally Unique Identifier, è un'Id univoco con stringa casuali di 36 lettere. il manageToken è legata alla sicurezza e privacy
+        defaultValue: DataTypes.UUIDV4,
+        allowNull: false,
+        unique: true
+    }
+}, {
+    tableName:'Appuntamento',
     indexes: [
         {
+            name: 'unique_appuntamento_slot',
             unique: true,
             fields: ['date', 'startTime'],
-            name: 'unique_appuntamento_slot'
         }
     ]
 })

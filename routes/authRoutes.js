@@ -1,68 +1,116 @@
 import express from 'express'
-import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
-import Admin from '../models/Admin.js'
-import { authenticateAdmin } from '../middleware/authMiddleware.js'
+import { Op } from 'sequelize'
+import Staff from '../models/Staff.js'
+import { authenticateUser } from '../middleware/authMiddleware.js'
 
 const router = express.Router()
 
-// rotta per registrare nuovo Admin (solo admin autenticati)
-router.post('/register', authenticateAdmin, async (req, res) => {
+// Chi può creare chi (rispecchia la matrice dei permessi):
+// - Admin crea gli account staff (dottore, segretaria)
+// - Dottore crea solo segretarie
+// - Segretaria non compare → non può creare nessuno
+const CREABILI_DA = {
+    admin: ['dottore', 'segretaria'],
+    dottore: ['segretaria']
+}
+
+// REGISTRAZIONE — solo staff loggato, con permesso in base al proprio ruolo
+router.post('/register', authenticateUser, async (req, res) => {
     try {
-        const {username, password} = req.body
+        const { email, username, password, role } = req.body ?? {}
 
-        if (!username || !password) {
-            return res.status(400).json({ error: 'Username e password sono obbligatori'})
+        if (!email || !username || !password || role) {
+            return res.status(400).json({ error: 'Email, username, password e ruolo sono obbligatori' })
         }
 
-        const existingAdmin =await Admin.findOne({ where: {username}})
-        if (existingAdmin) {
-            return res.status(409).json({ error: 'Username già esistente'})
+        if (!RUOLI_VALIDI.includes(role)) {
+            return res.status(400).json({ error: 'Ruolo non valido' })
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const newAdmin = await Admin.create({
-        username,
-        password: hashedPassword
-    });
+        // Il creatore può creare solo i ruoli che il suo ruolo
+        const consentiti = CREABILI_DA[req.user.role] ?? []
+
+        if (!consentiti.includes(role)) {
+            return res.status(409).json({ error: `un ${req.user.role} non può creare un account &{role}` })
+        }
+
+        // username o email già in uso?
+        const esistente = await Staff.findOne({
+            where: {
+                [Op. or] : [{username},{ email}]
+            }
+        })
+        if(esistente) {
+            return res.status(409).json({ error: 'Email o username già esistente'})
+        }
+
+          // Password in chiaro: ci pensa l'hook beforeCreate del modello a hasharla
+          const nuovo = await Staff.create({ email, username, password, role})
 
         return res.status(201).json({
-        message: 'Admin creato con successo.',
-        admin: { id: newAdmin.id, username: newAdmin.username }
-    });
-  } catch (error) {
-    console.error('Errore durante la registrazione:', error);
-    return res.status(500).json({ error: 'Errore interno del server.' });
-  }
-});
+            message: 'Account creato con successo.',
+            user: {
+                id: newUser.id,
+                username: newUser.username,
+                email: newUser.email,
+                role: newUser.role
+            }
+        })
+    } catch (error) {
+        if (error.name === 'SequelizeValidationError') {
+            return res.status(400).json({ error: 'Email non valida' })
+        }
+        console.error('Errore durante la registrazione:', error)
+        return res.status(500).json({ error: 'Errore interno del server.' })
+    }
+})
 
-// login admin
+// login (accetta username o email)
 router.post('/login', async (req, res) => {
     try {
-        const { username, password } = req.body ?? {}
+        // identifier può essere la mail o lo username
+        const { identifier, password } = req.body ?? {}
 
-        if (!username || !password) {
-            return res.status(400).json({ error: 'Username e password sono obbligatori' })
+        if (!identifier || !password) {
+            return res.status(400).json({ error: 'Username, email e password sono obbligatori' })
         }
 
-        const admin = await Admin.findOne({ where: { username } })
-        if (!admin) {
+        const user = await Staff.findOne({
+            where: { [Op.or]: [{ username: identifier }, { email: identifier }] }
+        })
+
+        if (!user) {
             return res.status(401).json({ error: 'Credenziali non valide' })
         }
 
         // verifica della password
-        const passwordValida = await bcrypt.compare(password, admin.password)
-        if (!passwordValida) {
+        const isMatch = await user.checkPassword(password)
+        if (!isMatch) {
             return res.status(401).json({ error: 'Credenziali non valide' })
         }
 
         const token = jwt.sign(
-            { id: admin.id, username: admin.username },
+            {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                role: user.role
+            },
             process.env.JWT_SECRET,
             { expiresIn: '8h' }
         )
 
-        return res.json({ message: 'Login effettuato con successo', token })
+        return res.json({
+            message: 'Login effettuato con successo',
+            token,
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                role: user.role
+            }
+        })
     } catch (error) {
         console.error('Errore durante il login', error)
         return res.status(500).json({ error: 'Errore interno del server' })

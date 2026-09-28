@@ -2,33 +2,31 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import sequelize from './db.js'
+import './models/Staff.js'
+import '/models/Appuntamento'
 import authRoutes from './routes/authRoutes.js'
 import appuntamentoRoutes from './routes/appuntamentoRoutes.js'
 
-dotenv.config({ override: true, quiet: true })
-
 const app = express()
-const PORT = process.env.PORT || 5000
 
 // middleware
 // nota: con credentials: true il browser non accetta origin '*', quindi senza CLIENT_URL si riflette l'origine della richiesta
-app.use(cors({
-    origin: process.env.CLIENT_URL || true,
-    credentials: true
-}))
+app.use(cors())
+// legge i body JSON e li mette su req.body
 app.use(express.json())
 
-// rotte API
-app.use('/api/auth', authRoutes)
-app.use('/api/appuntamento', appuntamentoRoutes)
+//helth check: utile per verificare al volo che il server rispone
+app.get('/api/health', (req, res) => res.json({ok: true})) 
 
-// rotta di controllo
-app.get('/', (req, res) => {
-    res.json({ message: 'API Studio Psicologia attiva e funzionante' })
-})
+// rotte API
+// /api/auth/register, /api/auth/login
+app.use('/api/auth', authRoutes)
+// /api/slots/, /api/appuntamento
+app.use('/api', appuntamentoRoutes)
+
 
 // sincronizzazione DataBase e avvio server
-const startServer = async () => {
+const start = async () => {
     try {
         await sequelize.authenticate()
         console.log('Connessione al database MySql di MAMP riuscita')
@@ -45,4 +43,4 @@ const startServer = async () => {
     }
 }
 
-startServer()
+start()
