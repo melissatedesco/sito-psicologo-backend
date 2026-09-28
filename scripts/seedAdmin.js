@@ -1,34 +1,44 @@
-import bcrypt from 'bcrypt'
+import 'dotenv/config'
 import sequelize from '../db.js'
-import Admin from '../models/Admin.js'
+import Staff from '../models/Staff.js'
 
-// credenziali lette dal file .env (con valori di default solo per lo sviluppo)
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin'
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'AdminPassword123!'
-
-const seedAdmin = async () => {
+// crea il primo account Admin, senon esiste già
+// si lancia UNA volta 
+    const seedAdmin = async () => {
     try {
+        await sequelize.authenticate()
         await sequelize.sync()
 
-        const existingAdmin = await Admin.findOne({ where: { username: ADMIN_USERNAME } })
-        if (existingAdmin) {
-            console.log('L\'utente Admin è già stato creato in precedenza')
+        const email = process.env.ADMIN_EMAIL
+        const username = process.env.ADMIN_USERNAME
+        const password = process.env.ADMIN_PASSWORD
+
+        if(!email || !username || !password) {
+            console.error('Mancano ADMIN_EMAIL, ADMIN_USERNAME o ADMIN_PASSWORD')
+            process.exit(1)
+        }
+
+        // evita di creare un sercondo profilo
+        const esistente = await Staff.findOne({
+            where: { role: 'admin'}
+        })
+        if (esistente) {
+            console.log('Admin già esistente', esistente.username)
             process.exit(0)
         }
 
-        const hashedPassword = await bcrypt.hash(ADMIN_PASSWORD, 10)
-
-        await Admin.create({
-            username: ADMIN_USERNAME,
-            password: hashedPassword
+        const admin = await Staff.create({
+            email, 
+            usermane,
+            password,
+            role: 'admin'
         })
-
-        console.log(`Utente Admin creato con successo! (Username: ${ADMIN_USERNAME})`)
-        process.exit(0)
-    } catch (error) {
-        console.error('Errore durante la creazione dell\'Admin:', error)
-        process.exit(1)
-    }
+        console.log('Admin creato:', admin.username, '-', admin.email)
+            process.exit(0)
+        } catch (error) {
+            console.error('Errore nel seed:', err.message)
+            process.exit(1)
+        }
 }
 
 seedAdmin()
