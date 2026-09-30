@@ -1,12 +1,13 @@
 import express from 'express'
+import { Op } from 'sequelize'
+import { sendConfirmationEmail } from '../utils/sendEmail.js'
 import Appuntamento from '../models/Appuntamento.js'
 import { calculateAvailableSlots, isValidDateString } from '../utils/slotCalculator.js'
-import { sendConfirmationEmail } from '../utils/mailer.js'
-import { authenticateAdmin } from '../middleware/authMiddleware.js'
+import { authenticateUser, requireRole } from '../middleware/authMiddleware.js'
 
 const router = express.Router()
 
-// campi che l'admin può modificare
+// campi che lo staff può modificare
 const CAMPI_MODIFICABILI = ['date', 'startTime', 'clientName', 'clientEmail', 'clientPhone', 'notes', 'status']
 
 // rotte del paziente
@@ -95,10 +96,57 @@ router.post('/book', async (req, res) => {
     }
 })
 
-// rotte protette per l'admin
+// GET /manage/:token  → il paziente vede il proprio appuntamento
+router.get('/manage/:token', async (req, res) => {
+  try {
+    const { token } = req.params
+
+    const appuntamento = await Appuntamento.findOne({
+      where: { manageToken: token },
+    })
+
+    if (!appuntamento) {
+      return res.status(404).json({ error: 'Appuntamento non trovato o link non valido' })
+    }
+
+    // Restituisco solo i campi utili al paziente, non tutto il record
+    return res.json({
+      date: appuntamento.date,
+      startTime: appuntamento.startTime,
+      clientName: appuntamento.clientName,
+      status: appuntamento.status,
+    })
+  } catch (error) {
+    console.error('Errore recupero appuntamento:', error)
+    return res.status(500).json({ error: 'Errore interno del server' })
+  }
+})
+
+// DELETE /manage/:token  → il paziente disdice il proprio appuntamento
+router.delete('/manage/:token', async (req, res) => {
+  try {
+    const { token } = req.params
+
+    const appuntamento = await Appuntamento.findOne({
+      where: { manageToken: token },
+    })
+
+    if (!appuntamento) {
+      return res.status(404).json({ error: 'Appuntamento non trovato o link non valido' })
+    }
+
+    await appuntamento.destroy()
+    return res.json({ message: 'Appuntamento disdetto correttamente' })
+  } catch (error) {
+    console.error('Errore disdetta:', error)
+    return res.status(500).json({ error: 'Errore interno del server' })
+  }
+})
+
+// rotte protette per lo staff (dottore e segretaria)
 
 // elenco completo degli appuntamenti
-router.get('/', authenticateAdmin, async (req, res) => {
+router.get('/', authenticateUser, requireRole('dottore', 'segretaria'), async (req, res) => {
     try {
         const appuntamenti = await Appuntamento.findAll({
             order: [['date', 'DESC'], ['startTime', 'ASC']]
@@ -111,7 +159,7 @@ router.get('/', authenticateAdmin, async (req, res) => {
 })
 
 // modifica appuntamento
-router.put('/:id', authenticateAdmin, async (req, res) => {
+router.put('/:id', authenticateUser, requireRole('dottore', 'segretaria'), async (req, res) => {
     try {
         const { id } = req.params
         const appuntamento = await Appuntamento.findByPk(id)
@@ -139,7 +187,7 @@ router.put('/:id', authenticateAdmin, async (req, res) => {
 })
 
 // elimina appuntamento
-router.delete('/:id', authenticateAdmin, async (req, res) => {
+router.delete('/:id', authenticateUser, requireRole('dottore', 'segretaria'), async (req, res) => {
     try {
         const { id } = req.params
         const appuntamento = await Appuntamento.findByPk(id)

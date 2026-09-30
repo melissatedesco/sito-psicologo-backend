@@ -14,9 +14,9 @@ export const authenticateUser = (req, res, next) => {
 
     try {
         // se il token è valido restituisce il payload che avevano firmato
-        // nel login: {id, userneme, email, role}
+        // nel login: {id, username, email, role}
         const payload = jwt.verify(token, process.env.JWT_SECRET)
-        req.user = password
+        req.user = payload
         next()
     } catch (error) {
         // token scaduto o manomesso
@@ -30,12 +30,12 @@ export const requireRole = (...ruoliAmmessi) => {
     return (req, res, next) => {
         // va usato sempre dopo authenticateUser, che popola req.user
         if (!req.user) {
-            return res.status(403).json({ error: 'Non autenticato' })
-    }
-    if(!ruoliAmmessi.includes(req.user.role)) {
-        return res.status(403).json({error: 'Non hai i permessi per questa azione '})
-    }
-    
-    next()
+            return res.status(401).json({ error: 'Non autenticato' })
+        }
+        if (!ruoliAmmessi.includes(req.user.role)) {
+            return res.status(403).json({ error: 'Non hai i permessi per questa azione' })
+        }
+
+        next()
     }
 }
