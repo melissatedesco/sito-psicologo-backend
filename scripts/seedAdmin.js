@@ -2,9 +2,9 @@ import 'dotenv/config'
 import sequelize from '../db.js'
 import Staff from '../models/Staff.js'
 
-// crea il primo account Admin, senon esiste già
-// si lancia UNA volta 
-    const seedAdmin = async () => {
+// crea il primo account Admin, se non esiste già
+// si lancia UNA volta
+const seedAdmin = async () => {
     try {
         await sequelize.authenticate()
         await sequelize.sync()
@@ -18,7 +18,7 @@ import Staff from '../models/Staff.js'
             process.exit(1)
         }
 
-        // evita di creare un sercondo profilo
+        // evita di creare un secondo profilo
         const esistente = await Staff.findOne({
             where: { role: 'admin'}
         })
@@ -29,16 +29,16 @@ import Staff from '../models/Staff.js'
 
         const admin = await Staff.create({
             email, 
-            usermane,
+            username,
             password,
             role: 'admin'
         })
         console.log('Admin creato:', admin.username, '-', admin.email)
-            process.exit(0)
-        } catch (error) {
-            console.error('Errore nel seed:', err.message)
-            process.exit(1)
-        }
+        process.exit(0)
+    } catch (err) {
+        console.error('Errore nel seed:', err.message)
+        process.exit(1)
+    }
 }
 
 seedAdmin()

@@ -10,6 +10,8 @@ const router = express.Router()
 // - Admin crea gli account staff (dottore, segretaria)
 // - Dottore crea solo segretarie
 // - Segretaria non compare → non può creare nessuno
+const RUOLI_VALIDI = ['admin', 'dottore', 'segretaria']
+
 const CREABILI_DA = {
     admin: ['dottore', 'segretaria'],
     dottore: ['segretaria']
@@ -20,7 +22,7 @@ router.post('/register', authenticateUser, async (req, res) => {
     try {
         const { email, username, password, role } = req.body ?? {}
 
-        if (!email || !username || !password || role) {
+        if (!email || !username || !password || !role) {
             return res.status(400).json({ error: 'Email, username, password e ruolo sono obbligatori' })
         }
 
@@ -28,25 +30,25 @@ router.post('/register', authenticateUser, async (req, res) => {
             return res.status(400).json({ error: 'Ruolo non valido' })
         }
 
-        // Il creatore può creare solo i ruoli che il suo ruolo
+        // Il creatore può creare solo i ruoli consentiti dal suo ruolo
         const consentiti = CREABILI_DA[req.user.role] ?? []
 
         if (!consentiti.includes(role)) {
-            return res.status(409).json({ error: `un ${req.user.role} non può creare un account &{role}` })
+            return res.status(403).json({ error: `un ${req.user.role} non può creare un account ${role}` })
         }
 
         // username o email già in uso?
         const esistente = await Staff.findOne({
             where: {
-                [Op. or] : [{username},{ email}]
+                [Op.or]: [{ username }, { email }]
             }
         })
-        if(esistente) {
-            return res.status(409).json({ error: 'Email o username già esistente'})
+        if (esistente) {
+            return res.status(409).json({ error: 'Email o username già esistente' })
         }
 
-          // Password in chiaro: ci pensa l'hook beforeCreate del modello a hasharla
-          const nuovo = await Staff.create({ email, username, password, role})
+        // Password in chiaro: ci pensa l'hook beforeCreate del modello a hasharla
+        const newUser = await Staff.create({ email, username, password, role })
 
         return res.status(201).json({
             message: 'Account creato con successo.',
