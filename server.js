@@ -1,14 +1,12 @@
+import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
-import dotenv from 'dotenv'
 import sequelize from './db.js'
 // import dei modelli: servono a registrarli prima di sequelize.sync()
 import './models/Staff.js'
 import './models/Appuntamento.js'
 import authRoutes from './routes/authRoutes.js'
 import appuntamentoRoutes from './routes/appuntamentoRoutes.js'
-
-dotenv.config({ override: true, quiet: true })
 
 const app = express()
 const PORT = process.env.PORT || 3000
