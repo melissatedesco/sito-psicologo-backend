@@ -41,6 +41,7 @@ sito-psicologo-backend/
 Il paziente non ha account: è identificato dal `manageToken` del singolo
 appuntamento. Lo staff accede con login (JWT) e campo `role`.
 
+
 ## Endpoint
 
 ### Auth — /api/auth
