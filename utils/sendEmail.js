@@ -1,19 +1,19 @@
 import nodemailer from 'nodemailer'
-
+import dotenv from 'dotenv'
 dotenv.config({ override: true, quiet: true })
 
 const transporter = nodemailer.createTransport({
-    host: process.env.SMPT_HOST || 'smtp.gmail.com',
-    port: Number(process.env.SMTP_PORT) || 587,
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT),
     auth: {
-        user: process.env.SMPT_USER,
-        pass: process.env.SMPT_PASS
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
     }
 })
 
 export const sendConfirmationEmail = async (appuntamento) => {
     // link con cui il paziente gestisce il proprio appuntamento
-    const manageUrl = `${ process.env.APP_URL}/api/appuntamento/manage/${appuntamento.manageToken}`
+    const manageUrl = `${process.env.APP_URL}/api/manage/${appuntamento.manageToken}`
 
     await transporter.sendMail({
         from: process.env.MAIL_FROM,
@@ -29,7 +29,7 @@ export const sendConfirmationEmail = async (appuntamento) => {
         <p><a href="${manageUrl}">${manageUrl}</a></p>
         <hr>
         <p style="font-size:12px;
-        color:#777>
+        color:#777">
         Non risponda a questa email. Per contatti: info@studio.it
         `
     })

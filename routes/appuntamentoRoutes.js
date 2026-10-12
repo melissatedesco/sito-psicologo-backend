@@ -168,10 +168,34 @@ router.put('/:id', authenticateUser, requireRole('dottore', 'segretaria'), async
             return res.status(404).json({ error: 'Appuntamento non trovato' })
         }
 
-        if (req.body?.date !== undefined && !isValidDateString(req.body.date)) {
-            return res.status(400).json({ error: 'Formato data non valido (YYYY-MM-DD)' })
-        }
+        // valori proprosti: se non arrivano nel body, restano quelli attuali
+        const nuovaData= req.body?.date ?? appuntamento.date
+        const nuovoOrario = req.body?.startTime ?? appuntamento.startTime
 
+        // rivalida solo se data o ora cambiano davvero
+        const cambiaSlot = nuovaData !== appuntamento.date || nuovoOrario !== appuntamento.startTime
+
+        if (cambiaSlot) {
+            if (!isValidDateString(nuovaData)) {
+                return res.status(400).json({ error: 'Formato data non valido (YYYY-MM-DD)' })
+            }
+
+            // appuntamenti confermati in quella data, Escluso questo stesso
+            const bookedAppuntamenti = await Appuntamento.findAll({
+                where: {
+                    date: nuovaData,
+                    status: 'confermato',
+                    id: { [Op.ne]: appuntamento.id}
+                }, 
+                attributes: ['startTime']
+            })
+
+            const availableSlots = calculateAvailableSlots(nuovaData, bookedAppuntamenti)
+            if (!availableSlots.includes(nuovoOrario)) {
+                return res.status(409).json({ error: 'Nuovo orario non disponibile'})
+            }
+        }
+       
         await appuntamento.update(req.body ?? {}, { fields: CAMPI_MODIFICABILI })
         return res.json({ message: 'Appuntamento aggiornato con successo', appuntamento })
     } catch (error) {

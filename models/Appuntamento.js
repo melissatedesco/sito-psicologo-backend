@@ -46,13 +46,7 @@ const Appuntamento = sequelize.define('Appuntamento', {
         unique: true
     }
 }, {
-    status: {
-        type:DataTypes.ENUM('confermato', 'cancellato'),
-        allowNull: false,
-        defaultValue:'confermato'
-    }
-}, {
-    tableName:'Appuntamento',
+    tableName:'appuntamenti',
     indexes: [
         {
             name: 'unique_appuntamento_slot',
