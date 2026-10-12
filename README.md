@@ -1,90 +1,118 @@
-# Sito Psicologo — Backend
+# Sito Psicologo – Backend
 
-Backend per il sito di uno studio di psicologia: prenotazione appuntamenti
-lato paziente e gestione lato staff con ruoli.
+API REST per la gestione degli appuntamenti di uno studio di psicologia.
+I pazienti prenotano senza account e ricevono un'email con un link personale per vedere o disdire l'appuntamento; lo staff (admin, dottore, segretaria) accede con login e gestisce l'agenda.
 
-## Stack
-- Node.js + Express 5 (ES modules)
-- Sequelize + MySQL (MAMP)
-- Autenticazione JWT, password con bcrypt
-- Email con Nodemailer
+## Tecnologie
 
-## Struttura
-sito-psicologo-backend/
-├── server.js                 # avvio, connessione DB, montaggio route
-├── db.js                     # istanza Sequelize
-├── scripts/
-│   └── seedAdmin.js          # crea il primo Admin (una tantum)
-├── config/
-│   └── schedule.js           # giorni/orari/durata slot
-├── models/
-│   ├── Staff.js              # account staff (hash password + checkPassword)
-│   └── Appuntamento.js       # appuntamenti (manageToken, indice unique)
-├── utils/
-│   ├── slotCalculator.js     # validazione data + calcolo slot liberi
-│   └── sendEmail.js          # email di conferma
-├── middleware/
-│   └── authMiddleware.js     # authenticateUser + requireRole
-└── routes/
-    ├── authRoutes.js         # register, login, logout
-    └── appuntamentoRoutes.js # slot, prenotazione, gestione, CRUD staff
+- **Node.js** + **Express 5** (ES modules)
+- **MySQL** (es. MAMP) con **Sequelize**
+- **JWT** per l'autenticazione dello staff, **bcrypt** per le password
+- **Nodemailer** per le email di conferma
 
-## Ruoli e permessi
-| Funzionalità                         | Paziente (token) | Segretaria | Dottore | Admin |
-|--------------------------------------|:----------------:|:----------:|:-------:|:-----:|
-| Prenotare                            | ✅               | ✅         | ✅      | ❌    |
-| Vedere/disdire il proprio (link)     | ✅               | ❌         | ❌      | ❌    |
-| Vedere/modificare/eliminare tutti    | ❌               | ✅         | ✅      | ❌    |
-| Creare account staff                 | ❌               | ❌         | ✅      | ✅    |
-| Configurazione sistema / account     | ❌               | ❌         | ❌      | ✅    |
+## Requisiti
 
-Il paziente non ha account: è identificato dal `manageToken` del singolo
-appuntamento. Lo staff accede con login (JWT) e campo `role`.
+- Node.js 18 o superiore
+- Un database MySQL attivo (con MAMP: host `localhost`, porta `3306` o `8889`)
+- Un account SMTP per l'invio delle email (es. Gmail con password per le app)
 
+## Installazione
 
-## Endpoint
+```bash
+git clone https://github.com/melissatedesco/sito-psicologo-backend.git
+cd sito-psicologo-backend
+npm install
+```
 
-### Auth — /api/auth
-- `POST /register`  (loggato) crea account staff
-- `POST /login`     { identifier, password } → token
-- `POST /logout`    (loggato) simbolico, il token si elimina lato client
+Crea il database vuoto in MySQL (le tabelle vengono create in automatico all'avvio):
 
-### Appuntamenti — /api
-Pubblici (paziente):
-- `GET  /available-slots?date=YYYY-MM-DD`  slot liberi
-- `POST /book`                              prenota + invia email
-- `GET  /manage/:token`                     vede il proprio appuntamento
-- `DELETE /manage/:token`                   disdice il proprio appuntamento
+```sql
+CREATE DATABASE studio_psicologia;
+```
 
-Staff (dottore, segretaria):
-- `GET    /`       lista appuntamenti
-- `PUT    /:id`    modifica (rivalida lo slot se cambia data/ora)
-- `DELETE /:id`    elimina
+Copia `.env.example` in `.env` e compila i valori (vedi sotto).
 
-Utility:
-- `GET /api/health` → { ok: true }
+## Variabili d'ambiente
 
-## Configurazione (.env)
-DB_HOST=127.0.0.1
-DB_PORT=8889            # 8889 Mac / 3306 Windows
-DB_NAME=studio_psicologo
-DB_USER=root
-DB_PASS=root
-PORT=5000
-JWT_SECRET=stringa-lunga-e-casuale
-ADMIN_EMAIL=admin@studio.it
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=UnaPasswordForte123
-SMTP_HOST=sandbox.smtp.mailtrap.io
-SMTP_PORT=2525
-SMTP_USER=...
-SMTP_PASS=...
-MAIL_FROM="Studio Psicologia <no-reply@studio.it>"
-APP_URL=http://localhost:5000
+| Variabile | Descrizione | Esempio |
+|---|---|---|
+| `PORT` | Porta del server | `5000` |
+| `CLIENT_URL` | URL del frontend | `http://localhost:5173` |
+| `DB_HOST` | Host MySQL | `localhost` |
+| `DB_PORT` | Porta MySQL | `3306` |
+| `DB_NAME` | Nome del database | `studio_psicologia` |
+| `DB_USER` | Utente MySQL | `root` |
+| `DB_PASS` | Password MySQL | `root` |
+| `JWT_SECRET` | Chiave per firmare i token (lunga e casuale) | |
+| `SMTP_HOST` | Server SMTP | `smtp.gmail.com` |
+| `SMTP_PORT` | Porta SMTP | `587` |
+| `SMTP_USER` | Utente SMTP | |
+| `SMTP_PASS` | Password SMTP | |
+| `MAIL_FROM` | Mittente delle email | `"Studio" <info@studio.it>` |
+| `APP_URL` | URL pubblico del backend, usato nel link dell'email | `http://localhost:5000` |
+| `ADMIN_EMAIL` | Email del primo admin (solo per il seed) | |
+| `ADMIN_USERNAME` | Username del primo admin (solo per il seed) | `admin` |
+| `ADMIN_PASSWORD` | Password del primo admin (solo per il seed) | |
 
 ## Avvio
-1. Accendi MAMP e crea il database `studio_psicologo` in phpMyAdmin
-2. `npm install`
-3. Compila il file `.env`
-4. `npm run seed`   # crea il primo Admin
-5. `npm run dev`    # avvia il server
+
+```bash
+npm run seed   # crea il primo account admin (una sola volta)
+npm run dev    # avvio in sviluppo con nodemon
+npm start      # avvio normale
+```
+
+Per verificare che il server risponda: `GET /api/health` → `{ "ok": true }`.
+
+## Orari degli appuntamenti
+
+Configurati in [config/schedule.js](config/schedule.js):
+
+- giorni lavorativi: lunedì–venerdì
+- orario: 09:00–19:30
+- durata di ogni slot: 60 minuti (l'ultimo slot prenotabile è alle 18:00)
+
+## API
+
+Le rotte protette richiedono l'header `Authorization: Bearer <token>`, ottenuto dal login. Il token dura 8 ore.
+
+### Autenticazione – `/api/auth`
+
+| Metodo | Rotta | Accesso | Descrizione |
+|---|---|---|---|
+| POST | `/login` | pubblico | Body: `{ identifier, password }` (identifier = username o email). Restituisce `token` e dati utente |
+| POST | `/register` | staff loggato | Body: `{ email, username, password, role }`. L'admin crea dottori e segretarie, il dottore crea solo segretarie |
+| POST | `/logout` | staff loggato | Conferma il logout (il token va eliminato lato client) |
+
+### Appuntamenti – `/api`
+
+| Metodo | Rotta | Accesso | Descrizione |
+|---|---|---|---|
+| GET | `/available-slots?date=YYYY-MM-DD` | pubblico | Orari liberi per una data |
+| POST | `/book` | pubblico | Prenota. Body: `{ date, startTime, clientName, clientEmail, clientPhone, notes? }`. Invia l'email di conferma |
+| GET | `/manage/:token` | paziente (link email) | Dettagli dell'appuntamento |
+| DELETE | `/manage/:token` | paziente (link email) | Disdice l'appuntamento |
+| GET | `/` | dottore, segretaria | Elenco di tutti gli appuntamenti |
+| PUT | `/:id` | dottore, segretaria | Modifica l'appuntamento; se cambiano data o ora controlla che il nuovo slot sia libero (409 se occupato) |
+| DELETE | `/:id` | dottore, segretaria | Elimina l'appuntamento |
+
+## Ruoli dello staff
+
+| Ruolo | Può creare account | Gestisce appuntamenti |
+|---|---|---|
+| `admin` | dottore, segretaria | no |
+| `dottore` | segretaria | sì |
+| `segretaria` | nessuno | sì |
+
+## Struttura del progetto
+
+```
+config/       orari dello studio
+middleware/   verifica del token JWT e dei ruoli
+models/       modelli Sequelize (Staff, Appuntamento)
+routes/       rotte di autenticazione e appuntamenti
+scripts/      seed dell'account admin
+utils/        calcolo degli slot e invio email
+db.js         connessione al database
+server.js     avvio del server
+```
