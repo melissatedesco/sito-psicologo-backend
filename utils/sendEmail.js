@@ -33,5 +33,21 @@ export const sendConfirmationEmail = async (appuntamento) => {
         Non risponda a questa email. Per contatti: info@studio.it
         `
     })
+}
 
+export const sendContactEmail = async ({name, email, message}) => {
+    await transporter.sendMail({
+        // dove arriva il messaggio
+        to: process.env.CONTACT_TO || 'info@studio.it',
+        // rispondi al visitatore 
+        replyTo: email,
+        subject: `Nuovo messaggio dal sito - ${name}`,
+        html: `
+        <h3>Nuovo messaggio dal modulo contatti</h3>
+        <p><strong>Nome:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Messaggio:</strong></p>
+        <p>${message}</p>
+        `
+    })
 }

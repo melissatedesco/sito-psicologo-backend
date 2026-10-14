@@ -7,6 +7,7 @@ import './models/Staff.js'
 import './models/Appuntamento.js'
 import authRoutes from './routes/authRoutes.js'
 import appuntamentoRoutes from './routes/appuntamentoRoutes.js'
+import contactRoutes from './routes/contactRoutes.js'
 
 const app = express()
 const PORT = process.env.PORT || 3000
@@ -25,6 +26,7 @@ app.get('/api/health', (req, res) => res.json({ok: true}))
 app.use('/api/auth', authRoutes)
 // /api/slots/, /api/appuntamento
 app.use('/api', appuntamentoRoutes)
+app.use('/api', contactRoutes)
 
 // sincronizzazione DataBase e avvio server
 const start = async () => {
