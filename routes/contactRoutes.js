@@ -3,16 +3,16 @@ import { sendContactEmail } from '../utils/sendEmail.js'
 
 const router = express.Router()
 
-// POST /api/contact invia il messaggio del visitarore allo studio
+// POST /api/contact invia il messaggio del visitatore allo studio
 router.post('/contact', async (req, res) => {
     try {
-        const {name, email, message} = req.body ?? {}
+        const {name, email, phone, message} = req.body ?? {}
 
         if (!name || !email || !message) {
-            return res.status(400).json({ error: 'Tutti i campi sono obbligarori'})
+            return res.status(400).json({ error: 'Tutti i campi sono obbligatori'})
         }
 
-        await sendContactEmail({name, email, message})
+        await sendContactEmail({name, email, phone, message})
         return res.status(200).json({message: 'Messaggio inviato con successo'})
     } catch (error) {
         console.error('Errore invio messaggio contatti:', error)

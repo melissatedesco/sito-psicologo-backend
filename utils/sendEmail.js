@@ -13,8 +13,7 @@ const transporter = nodemailer.createTransport({
 
 export const sendConfirmationEmail = async (appuntamento) => {
     // link con cui il paziente gestisce il proprio appuntamento
-    const manageUrl = `${process.env.APP_URL}/api/manage/${appuntamento.manageToken}`
-
+    const manageUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/gestione/${appuntamento.manageToken}`
     await transporter.sendMail({
         from: process.env.MAIL_FROM,
         to: appuntamento.clientEmail,
@@ -30,24 +29,35 @@ export const sendConfirmationEmail = async (appuntamento) => {
         <hr>
         <p style="font-size:12px;
         color:#777">
-        Non risponda a questa email. Per contatti: info@studio.it
+        Non risponda a questa email. Per contatti: info@studio.it</p>
         `
     })
 }
 
-export const sendContactEmail = async ({name, email, message}) => {
+// neutralizza l'HTML inserito dall'utente (evita injection nell'email)
+const escapeHtml = (str = '') =>
+    String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+
+export const sendContactEmail = async ({name, email, phone, message}) => {
     await transporter.sendMail({
+        from: process.env.MAIL_FROM,
         // dove arriva il messaggio
         to: process.env.CONTACT_TO || 'info@studio.it',
         // rispondi al visitatore 
         replyTo: email,
-        subject: `Nuovo messaggio dal sito - ${name}`,
+        subject: `Nuovo messaggio dal sito - ${escapeHtml(name)}`,
         html: `
         <h3>Nuovo messaggio dal modulo contatti</h3>
-        <p><strong>Nome:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Nome:</strong> ${escapeHtml(name)}</p>
+        <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+        <p><strong>Telefono:</strong> ${escapeHtml(phone) || 'non fornito'}</p>
         <p><strong>Messaggio:</strong></p>
-        <p>${message}</p>
+        <p>${escapeHtml(message)}</p>
         `
     })
 }

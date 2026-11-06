@@ -39,6 +39,15 @@ const Appuntamento = sequelize.define('Appuntamento', {
         allowNull: false,
         defaultValue: 'confermato'
     },
+    paid: {
+        type:DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+    },
+    amount: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
     manageToken: {
         type: DataTypes.UUID, // UUID: Universally Unique Identifier, è un'Id univoco con stringa casuali di 36 lettere. il manageToken è legata alla sicurezza e privacy
         defaultValue: DataTypes.UUIDV4,

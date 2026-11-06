@@ -26,7 +26,7 @@ const Staff = sequelize.define('Staff', {
         allowNull: false
     },
     role: {
-        type: DataTypes.ENUM('admin', 'dottore', 'segretaria'),
+        type: DataTypes.ENUM('dottore', 'segretaria'),
         allowNull: false,
     }
 }, {
