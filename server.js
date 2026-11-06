@@ -8,6 +8,8 @@ import './models/Appuntamento.js'
 import authRoutes from './routes/authRoutes.js'
 import appuntamentoRoutes from './routes/appuntamentoRoutes.js'
 import contactRoutes from './routes/contactRoutes.js'
+import pagamentoRoutes from './routes/pagamentoRoutes.js'
+import stripeWebhook from './routes/stripeWebhook.js'
 
 const app = express()
 const PORT = process.env.PORT || 3000
@@ -15,6 +17,7 @@ const PORT = process.env.PORT || 3000
 // middleware
 // nota: con credentials: true il browser non accetta origin '*', quindi senza CLIENT_URL si riflette l'origine della richiesta
 app.use(cors())
+app.use('/api/stripe', stripeWebhook)
 // legge i body JSON e li mette su req.body
 app.use(express.json())
 
@@ -27,6 +30,7 @@ app.use('/api/auth', authRoutes)
 // /api/slots/, /api/appuntamento
 app.use('/api', appuntamentoRoutes)
 app.use('/api', contactRoutes)
+app.use('/api', pagamentoRoutes)
 
 // sincronizzazione DataBase e avvio server
 const start = async () => {

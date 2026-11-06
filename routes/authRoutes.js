@@ -7,13 +7,11 @@ import { authenticateUser } from '../middleware/authMiddleware.js'
 const router = express.Router()
 
 // Chi può creare chi (rispecchia la matrice dei permessi):
-// - Admin crea gli account staff (dottore, segretaria)
 // - Dottore crea solo segretarie
 // - Segretaria non compare → non può creare nessuno
-const RUOLI_VALIDI = ['admin', 'dottore', 'segretaria']
+const RUOLI_VALIDI = ['dottore', 'segretaria']
 
 const CREABILI_DA = {
-    admin: ['dottore', 'segretaria'],
     dottore: ['segretaria']
 }
 

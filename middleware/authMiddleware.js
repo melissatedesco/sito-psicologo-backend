@@ -25,7 +25,7 @@ export const authenticateUser = (req, res, next) => {
 }
 
 // consente il passaggio solo ad alcuni ruoli
-// uso: requireRole('admin') oppure requireRole('dottore', 'segretaria')
+// uso: requireRole('dottore') oppure requireRole('dottore', 'segretaria')
 export const requireRole = (...ruoliAmmessi) => {
     return (req, res, next) => {
         // va usato sempre dopo authenticateUser, che popola req.user
