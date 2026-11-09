@@ -10,8 +10,11 @@ const sequelize = new Sequelize(
     {
         host: process.env.DB_HOST,
         port: process.env.DB_PORT,
-        dialectOptions:'SSL',
-        logging: false
+        dialect: 'mysql',
+        logging: false,
+        dialectOptions: process.env.DB_SSL === 'true'
+            ? { ssl: { minVersion: 'TLSv1.2', rejectUnauthorized: true } }
+            : {},
     }
 )
 
