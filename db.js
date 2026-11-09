@@ -1,5 +1,6 @@
-import { Sequelize } from "sequelize"
+import { Sequelize } from "sequelize";
 import dotenv from 'dotenv'
+
 dotenv.config({ override: true, quiet: true })
 
 const sequelize = new Sequelize(
